@@ -3,6 +3,7 @@
   "displayName": "notenote_vs_code",
   "description": "notenote VS Code extension",
   "version": "0.0.1",
+  "publisher": "Anatoli Makarevich",
   "engines": {
     "vscode": "^1.54.0"
   },
@@ -10,7 +11,7 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:notenote-vs-code.helloWorld"
+    "onLanguage:markdown"
   ],
   "main": "./dist/extension.js",
   "contributes": {

@@ -31,8 +31,17 @@ const moveFile = (_document: vscode.TextDocument, uri: vscode.Uri, noteConfig: {
 
 		const newFile = `${filesFolder}/${basename}`;
 		const filePath = vscode.Uri.file(newFile).path;
-
 		const data = fs.readFileSync(uri.path.trim());
+
+		if(fs.existsSync(newFile)) {
+			const existingFileData = fs.readFileSync(newFile);
+
+			if(!data.equals(existingFileData)) {
+				vscode.window.showWarningMessage(`File ${basename} already exists and is different from the one you're adding.`);
+				return;
+			}
+		}
+
 		fs.writeFileSync(filePath, data);
 	}
 
@@ -91,7 +100,7 @@ class FileNameListOnDropProvider implements vscode.DocumentDropEditProvider {
 			return moveFile(_document, uri, noteConfig);
 		});
 
-		return { insertText: snippets.join("\n") };
+		return { insertText: snippets.filter(s => s).join("\n") };
 	}
 }
 

@@ -1,43 +1,103 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
-import * as vscode from 'vscode';
+import * as vscode from "vscode";
+import * as path from "path";
+import * as fs from "fs";
+import * as os from "os";
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
-export function activate(context: vscode.ExtensionContext) {
+const URI_LIST_MIME = "text/uri-list";
+const IMAGE_EXTENSIONS = new Set([
+	".gif",
+	".jpg",
+	".jpeg",
+	".png",
+	".webp",
+	".svg"
+]);
+const NOTE_CONFIG_FILE = `${os.homedir()}/.notenote`;
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "notenote-vs-code" is now active!');
+const moveFile = (_document: vscode.TextDocument, uri: vscode.Uri, noteConfig: { notes_folder: string}) => {
+	const basename = path.basename(uri.path.trim());
 
-	setInterval(() => {
-		console.log("Hello World");
-	}, 1000);
+	const currentNoteFile = path.resolve(_document.uri.fsPath);
 
-	vscode.window.addEventListener("drop", () => {
-		console.log("drop");
-	});
+	const dailyNotesFolder = path.resolve(noteConfig.notes_folder);
 
-	vscode.window.addEventListener('dragover', () => {
-		console.log("dragover");
-	});
+	if(currentNoteFile.startsWith(dailyNotesFolder)) {
+		const currentNoteFolder = path.dirname(currentNoteFile);
+		const filesFolder = currentNoteFolder + "/files";
 
-	vscode.window.addEventListener("dragstart", () => {
-		console.log("dragstart");
-	});
+		if(!fs.existsSync(filesFolder)) {
+			fs.mkdirSync(filesFolder);
+		}
 
+		const newFile = `${filesFolder}/${basename}`;
+		const filePath = vscode.Uri.file(newFile).path;
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	let disposable = vscode.commands.registerCommand('notenote-vs-code.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from notenote_vs_code!');
-	});
+		const data = fs.readFileSync(uri.path.trim());
+		fs.writeFileSync(filePath, data);
+	}
 
-	context.subscriptions.push(disposable);
+	const fileExtension = path.extname(basename);
+
+	let insertText;
+
+	const escapedBasename = encodeURIComponent(basename);
+
+	if(IMAGE_EXTENSIONS.has(fileExtension)) {
+		insertText = `![${escapedBasename}](./files/${escapedBasename})`;
+	} else {
+		insertText = `[${escapedBasename}](./files/${escapedBasename})`;
+	}
+
+	return insertText;
+};
+
+class FileNameListOnDropProvider implements vscode.DocumentDropEditProvider {
+	async provideDocumentDropEdits(
+		_document: vscode.TextDocument,
+		position: vscode.Position,
+		dataTransfer: vscode.DataTransfer,
+		token: vscode.CancellationToken
+	): Promise<vscode.DocumentDropEdit | undefined> {
+		// Check the data transfer to see if we have dropped a list of uris
+		const dataTransferItem = dataTransfer.get(URI_LIST_MIME);
+		if (!dataTransferItem) {
+			return undefined;
+		}
+
+		// 'text/uri-list' contains a list of uris separated by new lines.
+		// Parse this to an array of uris.
+		const urlList = await dataTransferItem.asString();
+		if (token.isCancellationRequested) {
+			return undefined;
+		}
+
+		const uris: vscode.Uri[] = [];
+		for (const resource of urlList.split('\n')) {
+			try {
+				uris.push(vscode.Uri.parse(resource));
+			} catch {
+				// noop
+			}
+		}
+
+		if (!uris.length) {
+			return undefined;
+		}
+
+		const configFile = fs.readFileSync(NOTE_CONFIG_FILE);
+		const noteConfig = JSON.parse(configFile.toString());
+
+		const snippets = uris.map(uri => {
+			return moveFile(_document, uri, noteConfig);
+		});
+
+		return { insertText: snippets.join("\n") };
+	}
 }
 
-// This method is called when your extension is deactivated
-export function deactivate() {}
+
+export function activate(context: vscode.ExtensionContext) {
+	const selector: vscode.DocumentSelector = { language: "markdown" };
+
+	context.subscriptions.push(vscode.languages.registerDocumentDropEditProvider(selector, new FileNameListOnDropProvider()));
+}

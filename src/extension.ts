@@ -14,7 +14,7 @@ const IMAGE_EXTENSIONS = new Set([
 ]);
 const NOTE_CONFIG_FILE = `${os.homedir()}/.notenote`;
 
-const moveFile = (_document: vscode.TextDocument, uri: vscode.Uri, noteConfig: { notes_folder: string}) => {
+const copyFile = (_document: vscode.TextDocument, uri: vscode.Uri, noteConfig: { notes_folder: string}) => {
 	const basename = path.basename(uri.path.trim());
 
 	const currentNoteFile = path.resolve(_document.uri.fsPath);
@@ -97,7 +97,7 @@ class FileNameListOnDropProvider implements vscode.DocumentDropEditProvider {
 		const noteConfig = JSON.parse(configFile.toString());
 
 		const snippets = uris.map(uri => {
-			return moveFile(_document, uri, noteConfig);
+			return copyFile(_document, uri, noteConfig);
 		});
 
 		return { insertText: snippets.filter(s => s).join("\n") };

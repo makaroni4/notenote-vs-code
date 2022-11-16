@@ -3,7 +3,7 @@
   "icon": "images/notenote.png",
   "displayName": "notenote",
   "description": "A VS Code extension for the notenote note taking CLI tool.",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "publisher": "makaroni4",
   "engines": {
     "vscode": "^1.54.0"

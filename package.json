@@ -18,6 +18,10 @@
     "commands": [
     ]
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/makaroni4/notenote-vscode.git"
+  },
   "scripts": {
     "vscode:prepublish": "npm run package",
     "compile": "webpack",

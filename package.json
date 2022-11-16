@@ -3,7 +3,7 @@
   "displayName": "notenote",
   "description": "A VS Code extension for notenote note taking CLI tool.",
   "version": "0.0.2",
-  "publisher": "Anatoli Makarevich",
+  "publisher": "makaroni4",
   "engines": {
     "vscode": "^1.54.0"
   },

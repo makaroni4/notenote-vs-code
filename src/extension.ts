@@ -45,7 +45,7 @@ const copyFile = (_document: vscode.TextDocument, uri: vscode.Uri, noteConfig: {
 		fs.writeFileSync(filePath, data);
 	}
 
-	const fileExtension = path.extname(basename);
+	const fileExtension = path.extname(basename).toLowerCase();
 
 	let insertText;
 
